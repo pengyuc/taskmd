@@ -17,7 +17,7 @@ COPY apps/web/ apps/web/
 RUN pnpm --filter @taskmd/web build
 
 # Stage 2: Build Go binary
-FROM golang:1.25-alpine AS go-builder
+FROM docker.io/library/golang:1.25-alpine AS go-builder
 
 WORKDIR /build
 
@@ -26,7 +26,7 @@ COPY go.work go.work.sum ./
 COPY apps/cli/go.mod apps/cli/go.sum apps/cli/
 COPY sdk/go/go.mod sdk/go/go.sum sdk/go/
 
-RUN cd apps/cli && go mod download
+RUN go mod download
 
 # Copy web dist from stage 1 into the embed location
 COPY --from=web-builder /build/apps/web/dist /build/apps/cli/internal/web/static/dist
@@ -42,7 +42,7 @@ ARG BUILD_DATE=unknown
 
 RUN cd apps/cli && CGO_ENABLED=0 go build \
     -tags embed_web \
-    -ldflags="-s -w \
+    -ldflags="-s -w -extldflags '-static' \
       -X 'github.com/driangle/taskmd/apps/cli/internal/cli.Version=${VERSION}' \
       -X 'github.com/driangle/taskmd/apps/cli/internal/cli.GitCommit=${GIT_COMMIT}' \
       -X 'github.com/driangle/taskmd/apps/cli/internal/cli.BuildDate=${BUILD_DATE}'" \

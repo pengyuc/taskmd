@@ -202,12 +202,13 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           GIT_COMMIT: ${{ github.sha }}
           BUILD_DATE: ${{ github.event.repository.updated_at }}
+          CGO_ENABLED: 0
         run: |
           # Create output directory
           mkdir -p ../../dist
 
-          # Build flags with version info
-          LDFLAGS="-s -w \
+          # Build flags with version info and static linking
+          LDFLAGS="-s -w -extldflags '-static' \
             -X 'github.com/driangle/taskmd/apps/cli/internal/cli.Version=${VERSION}' \
             -X 'github.com/driangle/taskmd/apps/cli/internal/cli.GitCommit=${GIT_COMMIT}' \
             -X 'github.com/driangle/taskmd/apps/cli/internal/cli.BuildDate=${BUILD_DATE}'"

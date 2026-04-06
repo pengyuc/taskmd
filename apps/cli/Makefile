@@ -2,11 +2,11 @@
 
 # Build the binary
 build:
-	go build -o taskmd ./cmd/taskmd
+	CGO_ENABLED=0 go build -ldflags "-s -w -extldflags '-static'" -o taskmd ./cmd/taskmd
 
 # Run the application
 run:
-	go run ./cmd/taskmd
+	CGO_ENABLED=0 go run ./cmd/taskmd
 
 # Clean build artifacts
 clean:
@@ -15,27 +15,28 @@ clean:
 
 # Install the binary to $GOPATH/bin
 install:
-	go install ./cmd/taskmd
+	CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" ./cmd/taskmd
 
 # Install with embedded web assets
 install-full: web-embed
-	go install -tags embed_web ./cmd/taskmd
+	CGO_ENABLED=0 go install -tags embed_web -ldflags "-s -w -extldflags '-static'" ./cmd/taskmd
 
 # ldflags for injecting git info into dev builds
 DEV_COMMIT := $(shell git rev-parse --short HEAD)
 DEV_DIRTY  := $(shell git diff --quiet 2>/dev/null && echo false || echo true)
-DEV_LDFLAGS := -X 'github.com/driangle/taskmd/apps/cli/internal/cli.GitCommit=$(DEV_COMMIT)' \
+DEV_LDFLAGS := -s -w -extldflags '-static' \
+               -X 'github.com/driangle/taskmd/apps/cli/internal/cli.GitCommit=$(DEV_COMMIT)' \
                -X 'github.com/driangle/taskmd/apps/cli/internal/cli.GitDirty=$(DEV_DIRTY)'
 
 # Install as taskmd-dev (keeps Homebrew version available)
 install-dev:
-	go build -ldflags "$(DEV_LDFLAGS)" -o ~/bin/taskmd-dev ./cmd/taskmd
+	CGO_ENABLED=0 go build -ldflags "$(DEV_LDFLAGS)" -o ~/bin/taskmd-dev ./cmd/taskmd
 	@echo "Installed development binary to ~/bin/taskmd-dev"
 	@echo "Usage: taskmd-dev [command]"
 
 # Install as taskmd-dev with embedded web assets
 install-dev-full: web-embed
-	go build -tags embed_web -ldflags "$(DEV_LDFLAGS)" -o ~/bin/taskmd-dev ./cmd/taskmd
+	CGO_ENABLED=0 go build -tags embed_web -ldflags "$(DEV_LDFLAGS)" -o ~/bin/taskmd-dev ./cmd/taskmd
 	@echo "Installed development binary (with web) to ~/bin/taskmd-dev"
 	@echo "Usage: taskmd-dev [command]"
 
@@ -77,7 +78,7 @@ web-embed: web-build
 
 # Build Go binary with embedded web assets
 build-full: web-embed
-	go build -tags embed_web -o taskmd ./cmd/taskmd
+	CGO_ENABLED=0 go build -tags embed_web -ldflags "-s -w -extldflags '-static'" -o taskmd ./cmd/taskmd
 
 # Sync spec copies from the canonical source (docs/taskmd_specification.md).
 # Run this after editing the spec.
@@ -94,12 +95,12 @@ mcpb: build
 
 # Build MCPB bundles for all platforms
 mcpb-all:
-	GOOS=darwin GOARCH=amd64 go build -o taskmd-darwin-amd64 ./cmd/taskmd
-	GOOS=darwin GOARCH=arm64 go build -o taskmd-darwin-arm64 ./cmd/taskmd
-	GOOS=linux GOARCH=amd64 go build -o taskmd-linux-amd64 ./cmd/taskmd
-	GOOS=linux GOARCH=arm64 go build -o taskmd-linux-arm64 ./cmd/taskmd
-	GOOS=windows GOARCH=amd64 go build -o taskmd-windows-amd64.exe ./cmd/taskmd
-	GOOS=windows GOARCH=arm64 go build -o taskmd-windows-arm64.exe ./cmd/taskmd
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w -extldflags '-static'" -o taskmd-darwin-amd64 ./cmd/taskmd
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "-s -w -extldflags '-static'" -o taskmd-darwin-arm64 ./cmd/taskmd
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-s -w -extldflags '-static'" -o taskmd-linux-amd64 ./cmd/taskmd
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags "-s -w -extldflags '-static'" -o taskmd-linux-arm64 ./cmd/taskmd
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags "-s -w -extldflags '-static'" -o taskmd-windows-amd64.exe ./cmd/taskmd
+	CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build -ldflags "-s -w -extldflags '-static'" -o taskmd-windows-arm64.exe ./cmd/taskmd
 	../../scripts/build-mcpb.sh ./taskmd-darwin-amd64 "$$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo 0.0.0-dev)" darwin amd64 .
 	../../scripts/build-mcpb.sh ./taskmd-darwin-arm64 "$$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo 0.0.0-dev)" darwin arm64 .
 	../../scripts/build-mcpb.sh ./taskmd-linux-amd64 "$$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo 0.0.0-dev)" linux amd64 .
@@ -110,8 +111,8 @@ mcpb-all:
 
 # Build for multiple platforms
 build-all:
-	GOOS=darwin GOARCH=amd64 go build -o taskmd-darwin-amd64 ./cmd/taskmd
-	GOOS=darwin GOARCH=arm64 go build -o taskmd-darwin-arm64 ./cmd/taskmd
-	GOOS=linux GOARCH=amd64 go build -o taskmd-linux-amd64 ./cmd/taskmd
-	GOOS=windows GOARCH=amd64 go build -o taskmd-windows-amd64.exe ./cmd/taskmd
-	GOOS=windows GOARCH=arm64 go build -o taskmd-windows-arm64.exe ./cmd/taskmd
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w -extldflags '-static'" -o taskmd-darwin-amd64 ./cmd/taskmd
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "-s -w -extldflags '-static'" -o taskmd-darwin-arm64 ./cmd/taskmd
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-s -w -extldflags '-static'" -o taskmd-linux-amd64 ./cmd/taskmd
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags "-s -w -extldflags '-static'" -o taskmd-windows-amd64.exe ./cmd/taskmd
+	CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build -ldflags "-s -w -extldflags '-static'" -o taskmd-windows-arm64.exe ./cmd/taskmd
