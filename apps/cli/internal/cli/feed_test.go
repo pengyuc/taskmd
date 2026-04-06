@@ -881,7 +881,7 @@ func TestParseSinceTime(t *testing.T) {
 	if ts.IsZero() {
 		t.Error("expected non-zero time for 7d")
 	}
-	if !ts.Before(mustParseTime("2026-03-28T00:00:00Z")) {
+	if !ts.Before(time.Now()) {
 		t.Error("expected 7d ago to be before now")
 	}
 

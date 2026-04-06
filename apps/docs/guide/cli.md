@@ -1102,12 +1102,22 @@ taskmd spec --force
 
 ### mcp - Start MCP Server
 
-Start a Model Context Protocol (MCP) server that communicates over stdin/stdout. This allows LLM-based tools (Cursor, Windsurf, Copilot agents, Claude Code, etc.) to interact with your taskmd project using the standard MCP protocol.
+Start a Model Context Protocol (MCP) server that communicates over stdin/stdout or HTTP (SSE). This allows LLM-based tools (Cursor, Windsurf, Copilot agents, Claude Code, etc.) to interact with your taskmd project using the standard MCP protocol.
 
 ```bash
-# Start MCP server
+# Start MCP server over stdio (default)
 taskmd mcp
+
+# Start MCP server over HTTP (SSE)
+taskmd mcp --transport sse --port 8080
 ```
+
+**Flags:**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--transport` | `stdio` | Transport protocol to use: `stdio` or `sse` |
+| `--port` | `8080` | Port to listen on for `sse` transport |
 
 **Configuration example for Claude Code (`.mcp.json`):**
 ```json

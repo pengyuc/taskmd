@@ -9,10 +9,20 @@ The fastest way to install the taskmd MCP server is with an MCPB bundle. Downloa
 ## Starting the Server
 
 ```bash
+# Start an MCP server over stdio (default)
 taskmd mcp
+
+# Start an MCP server over HTTP (SSE)
+taskmd mcp --transport sse --port 8080
 ```
 
-This starts an MCP server over stdio. The server exposes all task operations as tools that MCP clients can discover and call.
+The server exposes all task operations as tools that MCP clients can discover and call.
+
+### Stdio Transport
+Standard input/output is the most common way to integrate MCP servers with local AI tools like Claude Code or Cursor.
+
+### HTTP (SSE) Transport
+Server-Sent Events (SSE) allows remote clients or web-based tools to connect to your taskmd project over a network.
 
 ## Client Configuration
 
@@ -36,6 +46,11 @@ Alternatively, add to your project's `.mcp.json` or run `claude mcp add --transp
     }
   }
 }
+```
+
+For HTTP (SSE) transport:
+```bash
+claude mcp add --transport sse taskmd -- http://localhost:8080/sse
 ```
 
 ### Claude Desktop
