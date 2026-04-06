@@ -23,16 +23,17 @@ taskmd --version
 
 ## Installation
 
-There are two plugins available:
+There are three plugins available:
 
 | Plugin | What it provides | Requires CLI? |
 |--------|-----------------|---------------|
 | **taskmd** | Slash command skills (`/taskmd:do-task`, `/taskmd:next-task`, etc.) that orchestrate task workflows by invoking the `taskmd` CLI | Yes |
-| **taskmd-mcp** | An MCP server that exposes task operations as tools (`list`, `get`, `next`, `search`, `set`, etc.), letting Claude call taskmd directly through the Model Context Protocol | Yes |
+| **taskmd-mcp** | An MCP server over stdio that exposes task operations as tools (`list`, `get`, `next`, `search`, `set`, etc.), letting Claude call taskmd directly | Yes |
+| **taskmd-mcp-http** | An MCP server over HTTP (SSE) that exposes the same tools but connects via HTTP instead of stdio. Make sure the HTTP server is running (`taskmd mcp --transport sse --port 8080`) | Yes |
 
-**taskmd** is best for interactive, human-driven workflows via slash commands. **taskmd-mcp** gives Claude direct tool access for autonomous task operations.
+**taskmd** is best for interactive, human-driven workflows via slash commands. **taskmd-mcp** and **taskmd-mcp-http** give Claude direct tool access for autonomous task operations.
 
-> **Choose one, not both.** The two plugins overlap in functionality — installing both will clutter your environment with redundant commands. Pick **taskmd** if you prefer slash-command-driven workflows, or **taskmd-mcp** if you want Claude to have direct tool access via MCP.
+> **Choose one, not all.** The plugins overlap in functionality — installing more than one will clutter your environment with redundant commands or tools. Pick **taskmd** if you prefer slash-command-driven workflows, or one of the **taskmd-mcp** plugins if you want Claude to have direct tool access via MCP.
 
 First, add the taskmd marketplace:
 
@@ -46,8 +47,11 @@ Then install **one** of the plugins:
 # Option A: Slash command skills (interactive workflows)
 claude plugin install taskmd@taskmd-marketplace --scope project
 
-# Option B: MCP server (direct tool access for Claude)
+# Option B: MCP server over stdio (direct tool access)
 claude plugin install taskmd-mcp@taskmd-marketplace --scope project
+
+# Option C: MCP server over HTTP (SSE) (direct tool access over network)
+claude plugin install taskmd-mcp-http@taskmd-marketplace --scope project
 ```
 
 Use `--scope user` instead of `--scope project` to install across all projects.
@@ -116,7 +120,11 @@ Use `--scope user` instead of `--scope project` to install across all projects.
 For direct tool access without shelling out to the CLI, install the optional MCP plugin:
 
 ```bash
+# Stdio server
 claude plugin install taskmd-mcp@taskmd-marketplace --scope project
+
+# HTTP (SSE) server
+claude plugin install taskmd-mcp-http@taskmd-marketplace --scope project
 ```
 
 The MCP server exposes task operations as tools (`list`, `get`, `next`, `search`, `context`, `set`, `validate`, `graph`), letting Claude Code call taskmd directly through the Model Context Protocol.
