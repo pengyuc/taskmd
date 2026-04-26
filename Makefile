@@ -17,14 +17,13 @@ check-lite:
 	cd apps/web && pnpm run lint
 	cd apps/vscode && pnpm run lint
 
-# Run all checks (compile, lint, tests for all projects + docs build + Docker build)
+# Run all checks (compile, lint, tests for all projects + docs build)
 check: check-lite
 	cd apps/cli && go test ./...
 	cd sdk/go && go test ./...
 	cd apps/web && npx vitest run
 	cd apps/vscode && pnpm test
 	cd apps/docs && pnpm build
-	docker build -t taskmd:ci-check .
 
 # Run tests only
 test:

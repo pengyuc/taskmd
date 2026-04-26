@@ -28,6 +28,7 @@ The user's query is in `$ARGUMENTS` (e.g. "set task 042 to high priority and in-
    - `--type` — feature, bug, improvement, chore, docs
    - `--owner` — assignee name
    - `--parent` — parent task ID (empty string to clear)
+   - `--phase` — phase ID (must match a phase id in `.taskmd.yaml`; empty string to clear). If the phase doesn't exist in `.taskmd.yaml`, add it there first (see `add-task` skill for the phases config format).
    - `--add-tag` / `--remove-tag` — add or remove tags (repeatable)
    - `--add-pr` / `--remove-pr` — add or remove PR URLs (repeatable)
 

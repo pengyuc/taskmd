@@ -4,6 +4,7 @@ import { Handle, Position } from "@xyflow/react";
 const STATUS_BG: Record<string, string> = {
   pending: "bg-yellow-50 border-yellow-300 dark:bg-yellow-900/20 dark:border-yellow-700",
   "in-progress": "bg-blue-50 border-blue-300 dark:bg-blue-900/20 dark:border-blue-700",
+  "in-review": "bg-purple-50 border-purple-300 dark:bg-purple-900/20 dark:border-purple-700",
   completed: "bg-green-50 border-green-300 dark:bg-green-900/20 dark:border-green-700",
   blocked: "bg-red-50 border-red-300 dark:bg-red-900/20 dark:border-red-700",
   cancelled: "bg-gray-50 border-gray-300 dark:bg-gray-800 dark:border-gray-600",

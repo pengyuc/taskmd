@@ -123,4 +123,16 @@ describe("PhasesView", () => {
     expect(screen.getByText(/Completed: 1/)).toBeInTheDocument();
     expect(screen.getByText(/Blocked: 1/)).toBeInTheDocument();
   });
+
+  it("shows In Review badge for in-review tasks", () => {
+    const tasks = [
+      makeTask({ id: "1", phase: "alpha", status: "in-review" }),
+      makeTask({ id: "2", phase: "alpha", status: "in-review" }),
+      makeTask({ id: "3", phase: "alpha", status: "completed" }),
+    ];
+    renderView({ phases, tasks });
+
+    expect(screen.getByText(/In Review: 2/)).toBeInTheDocument();
+    expect(screen.getByText(/Completed: 1/)).toBeInTheDocument();
+  });
 });

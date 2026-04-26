@@ -36,7 +36,7 @@ Description and subtasks go here.
 | `touches` | No | Scope identifiers for conflict detection (e.g., `["cli/graph"]`) |
 | `context` | No | File paths relevant to the task (e.g., `["docs/api-design.md"]`) |
 | `parent` | No | Parent task ID — organizational only, no blocking |
-| `created` | No | `YYYY-MM-DD` |
+| `created_at` | No | `YYYY-MM-DD` (alias: `created`) |
 | `verify` | No | Acceptance checks (see below) |
 | `pr` | No | Pull request URLs — managed via `taskmd set --add-pr <url>` |
 
@@ -137,7 +137,7 @@ type: feature
 phase: "v1.0"
 dependencies: ["012", "013"]
 tags: [auth, security, api]
-created: 2026-02-08
+created_at: 2026-02-08
 verify:
   - type: bash
     run: "go test ./internal/auth/..."

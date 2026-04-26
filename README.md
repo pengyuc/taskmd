@@ -66,10 +66,10 @@ docker run --rm -v ./tasks:/tasks ghcr.io/driangle/taskmd taskmd list
 
 ### 30-Second Setup
 
-1. **Create a tasks directory**:
+1. **Initialize taskmd in your project**:
    ```bash
-   mkdir -p my-project/tasks
    cd my-project
+   taskmd init  # Creates tasks/ directory and .taskmd.yaml config
    ```
 
 2. **Create your first task** (`tasks/001-first-task.md`):

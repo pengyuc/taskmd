@@ -73,6 +73,10 @@ taskmd list --filter status=in-progress
 # Filter by priority
 taskmd list --filter priority=high
 
+# Filter by priority with comparison (>=, >, <=, <)
+taskmd list --filter "priority>=medium"
+taskmd list --filter "priority>low"
+
 # Filter by multiple criteria (AND logic)
 taskmd list --filter status=pending --filter priority=high
 
@@ -81,6 +85,9 @@ taskmd list --filter tag=cli
 
 # Filter by effort
 taskmd list --filter effort=small
+
+# Filter by effort with comparison
+taskmd list --filter "effort>=medium"
 ```
 
 **Sorting:**
@@ -114,8 +121,11 @@ taskmd list --sort priority --limit 5
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--filter` | | Filter tasks (repeatable, AND logic) |
+| `--filter` | | Filter tasks (repeatable, AND logic); `priority` and `effort` support `>=`, `>`, `<=`, `<` |
 | `--phase` | | Filter tasks by phase name |
+| `--scope` | | Filter by scope; supports wildcards (e.g. `cli`, `cli*`) |
+| `--status` | | Shortcut for `--filter status=<value>` |
+| `--priority` | | Shortcut for `--filter priority=<value>` |
 | `--sort` | | Sort by field (`id`, `title`, `status`, `priority`, `effort`, `created`) |
 | `--columns` | `id,title,status,priority,file` | Comma-separated list of columns to display |
 | `--limit` | `0` | Maximum number of tasks to display (0 = unlimited) |
@@ -125,6 +135,9 @@ taskmd list --sort priority --limit 5
 ```bash
 # High-priority pending tasks
 taskmd list --filter status=pending --filter priority=high
+
+# Medium priority and above
+taskmd list --filter status=pending --filter "priority>=medium"
 
 # Small tasks (quick wins)
 taskmd list --filter effort=small --filter status=pending
@@ -168,7 +181,7 @@ taskmd validate --format json
 | `--strict` | `false` | Enable strict validation with additional warnings |
 
 **What it checks:**
-- Required fields present (id, title, status)
+- Required fields present (id, title)
 - Valid field values
 - Duplicate task IDs
 - Missing dependencies (references to non-existent tasks)
@@ -226,6 +239,12 @@ taskmd next --format json
 | `--limit` | `5` | Maximum number of recommendations |
 | `--filter` | | Filter tasks (repeatable, e.g. `--filter tag=cli`) |
 | `--phase` | | Filter recommendations by phase name |
+| `--scope` | | Filter by scope; supports wildcards (e.g. `cli`, `cli*`) |
+| `--exact` | `false` | Disable dependency expansion for `--scope` (only direct matches) |
+| `--status` | | Shortcut for `--filter status=<value>` |
+| `--priority` | | Shortcut for `--filter priority=<value>` |
+| `--columns` | `rank,id,title,priority,effort,file,reason` | Comma-separated columns for table output |
+| `--strict-phases` | `false` | Enforce strict phase ordering (earlier phases always rank first) |
 | `--quick-wins` | `false` | Show only quick wins (effort: small) |
 | `--critical` | `false` | Show only critical path tasks |
 
@@ -294,6 +313,10 @@ taskmd graph --focus 022 --format mermaid
 | `--downstream` | `false` | Show only dependents (descendants) |
 | `--focus` | | Highlight specific task ID |
 | `--filter` | | Filter tasks (repeatable, AND logic) |
+| `--status` | | Shortcut for `--filter status=<value>` |
+| `--priority` | | Shortcut for `--filter priority=<value>` |
+| `--phase` | | Filter by phase |
+| `--scope` | | Filter by scope; supports wildcards (e.g. `cli`, `cli*`) |
 | `--out`, `-o` | | Write output to file |
 
 **Output to file:**
@@ -408,7 +431,7 @@ taskmd snapshot --out snapshot.json
 | `--format` | `json` | Output format (`json`, `yaml`, `md`) |
 | `--core` | `false` | Output only core fields (id, title, dependencies) |
 | `--derived` | `false` | Include computed/derived fields (blocked status, depth, topological order) |
-| `--group-by` | | Group tasks by field (`status`, `priority`, `effort`, `type`, `group`) |
+| `--group-by` | | Group tasks by field (`status`, `priority`, `effort`, `type`, `group`, `phase`) |
 | `--out`, `-o` | | Write output to file |
 
 ### get - View Task Details
@@ -1144,7 +1167,7 @@ taskmd report tasks/ --format html --include-graph --out report.html
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--format` | `md` | Output format (`md`, `html`, `json`) |
-| `--group-by` | `status` | Field to group by (`status`, `priority`, `effort`, `group`, `tag`) |
+| `--group-by` | `status` | Field to group by (`status`, `priority`, `effort`, `type`, `group`, `tag`, `phase`) |
 | `--out`, `-o` | | Write output to file |
 | `--include-graph` | `false` | Embed dependency graph in report |
 
@@ -1222,9 +1245,10 @@ taskmd feed --format json
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--format` | `text` | Output format (`text`, `json`) |
-| `--limit` | `20` | Maximum number of commits to show |
+| `--limit` | `20` | Maximum number of entries to show |
 | `--scope` | | Filter to a tasks subdirectory; supports wildcards (e.g. `cli`, `cli*`) |
 | `--since` | | Show changes since (e.g. `2d`, `1w`, `2026-02-28`) |
+| `--source` | `all` | Filter by event source (`all`, `git`, `worklog`) |
 
 ### sync - Sync External Sources
 
@@ -1408,6 +1432,8 @@ taskmd init --stdout
 | `--no-spec` | `false` | Skip generating TASKMD_SPEC.md |
 | `--no-agent` | `false` | Skip generating agent configuration files |
 | `--no-templates` | `false` | Skip copying built-in task templates |
+| `--id-strategy` | | ID generation strategy (`sequential`, `prefixed`, `random`, `ulid`) |
+| `--id-prefix` | | Prefix for prefixed ID strategy |
 | `--force` | `false` | Overwrite existing files |
 | `--stdout` | `false` | Print all content to stdout instead of writing files |
 
@@ -1616,7 +1642,7 @@ Environment variables have lower precedence than config files and CLI flags.
 
 - Check YAML frontmatter is properly formatted
 - Ensure required fields are present: `id`, `title`
-- Verify status is valid: `pending`, `in-progress`, `completed`, `blocked`, `cancelled`
+- Verify status is valid if present: `pending`, `in-progress`, `completed`, `blocked`, `cancelled`
 - Run `taskmd validate tasks/` for line-level error messages
 
 ### "Circular dependency detected"

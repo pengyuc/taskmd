@@ -75,6 +75,10 @@ func ParseTaskContent(filePath string, content []byte) (*model.Task, error) {
 				Err:      err,
 			}
 		}
+		// Backward compatibility: accept deprecated "created" field
+		if task.Created.IsZero() && !task.CreatedDeprecated.IsZero() {
+			task.Created = task.CreatedDeprecated
+		}
 	}
 
 	// Derive missing fields from filename

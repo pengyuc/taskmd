@@ -33,7 +33,7 @@ The user's query is in `$ARGUMENTS` (e.g. "set task 042 to high priority and in-
    - **effort**: Replace `effort: <old>` with `effort: <new>` — valid: small, medium, large
    - **type**: Replace `type: <old>` with `type: <new>` — valid: feature, bug, improvement, chore, docs
    - **owner**: Replace or add `owner: "<value>"`
-   - **phase**: Replace or add `phase: "<value>"`
+   - **phase**: Replace or add `phase: "<value>"` — must match a phase `id` in `.taskmd.yaml`. If the phase doesn't exist yet, add it to the `phases` array in `.taskmd.yaml` first (see `SPEC_REFERENCE.md`)
    - **parent**: Replace or add `parent: "<value>"`
    - **title**: Replace the `title: "..."` line
 

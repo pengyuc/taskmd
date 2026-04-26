@@ -51,6 +51,23 @@ describe("FieldGrid", () => {
     expect(options).toEqual(STATUSES);
   });
 
+  it("exposes all 6 spec statuses including in-review", () => {
+    const { container } = renderFieldGrid();
+    const select = getSelectByLabel(container, "Status");
+    const options = Array.from(select.options).map((o) => o.value);
+    expect(options).toEqual(
+      expect.arrayContaining([
+        "pending",
+        "in-progress",
+        "in-review",
+        "completed",
+        "blocked",
+        "cancelled",
+      ]),
+    );
+    expect(options).toHaveLength(6);
+  });
+
   it("renders priority options with empty default", () => {
     const { container } = renderFieldGrid();
     const select = getSelectByLabel(container, "Priority");

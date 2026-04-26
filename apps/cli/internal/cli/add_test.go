@@ -92,8 +92,8 @@ func TestAdd_HappyPath(t *testing.T) {
 	if !strings.Contains(fileStr, "tags: []") {
 		t.Error("expected tags: [] in frontmatter")
 	}
-	if !strings.Contains(fileStr, "created: ") {
-		t.Error("expected created date in frontmatter")
+	if !strings.Contains(fileStr, "created_at: ") {
+		t.Error("expected created_at date in frontmatter")
 	}
 
 	// Check body template

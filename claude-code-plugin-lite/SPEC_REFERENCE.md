@@ -93,8 +93,34 @@ worklogs: false         # true to enable worklogs
 phases:
   - id: phase-id
     name: "Phase Name"
+    description: "What this phase covers"
     due: 2026-04-01
 ```
+
+### Phases Configuration
+
+Phases are time-based groupings (sprints, milestones, releases) defined in `.taskmd.yaml`. Tasks reference a phase by its `id`.
+
+Each phase entry has:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `id` | yes | Short stable identifier, referenced by task `phase` field |
+| `name` | yes | Human-readable display label |
+| `description` | no | What the phase covers |
+| `due` | no | Target date (`YYYY-MM-DD`) |
+
+**Adding a new phase:** Append an entry to the `phases` array in `.taskmd.yaml`:
+
+```yaml
+phases:
+  - id: v2-launch
+    name: "V2 Launch"
+    description: "Features for the v2.0 release"
+    due: 2026-06-01
+```
+
+**Assigning a task to a phase:** Set `phase: "<phase-id>"` in the task's frontmatter. The value must match a configured phase `id`. When phases are configured, referencing an undefined phase ID produces a validation warning.
 
 ## ID Generation Strategies
 

@@ -13,7 +13,7 @@ Mark a task as completed using the `taskmd` CLI.
 The user's query is in `$ARGUMENTS` (a task ID like `077`). If `$ARGUMENTS` is empty or does not contain a task ID, infer the task from conversation context (e.g., the task currently being worked on). If the task cannot be determined, ask the user which task to complete.
 
 1. **Read the task file** to understand the full task scope:
-   - Run `taskmd show <ID>` to get the task contents
+   - Run `taskmd get <ID>` to get the task contents
    - Identify all **subtask checklists** (`- [ ]` / `- [x]` items) in the task body
    - Identify any **acceptance criteria** section
 

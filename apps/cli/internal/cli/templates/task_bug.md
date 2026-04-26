@@ -8,7 +8,7 @@ status: pending
 priority: high
 type: bug
 tags: []
-created: "{{date}}"
+created_at: "{{date}}"
 ---
 
 # {{title}}

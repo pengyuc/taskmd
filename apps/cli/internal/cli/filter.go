@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/driangle/taskmd/sdk/go/filter"
 	"github.com/driangle/taskmd/sdk/go/model"
 )
@@ -11,6 +13,46 @@ type filterCriteria = filter.Criteria
 // applyFilters delegates to the shared filter package.
 func applyFilters(tasks []*model.Task, filterExprs []string) ([]*model.Task, error) {
 	return filter.Apply(tasks, filterExprs)
+}
+
+// FilterShortcuts holds the common shortcut filter parameters shared across commands.
+type FilterShortcuts struct {
+	Status   string
+	Priority string
+	Phase    string
+	Scope    string
+	Filters  []string
+}
+
+// applyShortcutFilters expands shortcut flags into filter expressions and applies
+// all filters, scope, and phase filtering. Used by both list and graph commands.
+func applyShortcutFilters(tasks []*model.Task, s FilterShortcuts) ([]*model.Task, error) {
+	filters := append([]string{}, s.Filters...)
+	if s.Status != "" {
+		filters = append(filters, "status="+s.Status)
+	}
+	if s.Priority != "" {
+		filters = append(filters, "priority="+s.Priority)
+	}
+
+	if len(filters) > 0 {
+		var err error
+		tasks, err = applyFilters(tasks, filters)
+		if err != nil {
+			return nil, fmt.Errorf("filter error: %w", err)
+		}
+	}
+
+	if s.Scope != "" {
+		warnUnknownScope(s.Scope)
+		tasks = filterTasksByScope(tasks, s.Scope)
+	}
+
+	if s.Phase != "" {
+		tasks = filterTasksByPhase(tasks, s.Phase)
+	}
+
+	return tasks, nil
 }
 
 // matchesAllFilters is kept for backward-compatible tests.

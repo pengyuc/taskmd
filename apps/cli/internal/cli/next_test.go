@@ -177,6 +177,8 @@ func resetNextFlags() {
 	nextPhase = ""
 	nextStrictPhases = false
 	nextColumns = nextDefaultColumns
+	nextStatus = ""
+	nextPriority = ""
 }
 
 func TestNext_BasicRanking(t *testing.T) {

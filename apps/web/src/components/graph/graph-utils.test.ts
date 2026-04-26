@@ -68,4 +68,22 @@ describe("filterGraphByStatus", () => {
     const result = filterGraphByStatus(dataWithCycles, new Set(["pending"]));
     expect(result.cycles).toEqual([["001", "002"]]);
   });
+
+  it("filters by in-review status", () => {
+    const dataWithReview: GraphData = {
+      nodes: [
+        ...sampleData.nodes,
+        { id: "004", title: "Review PR", status: "in-review" },
+      ],
+      edges: [
+        ...sampleData.edges,
+        { from: "003", to: "004" },
+      ],
+      cycles: [],
+    };
+    const result = filterGraphByStatus(dataWithReview, new Set(["in-review"]));
+    expect(result.nodes).toHaveLength(1);
+    expect(result.nodes[0].id).toBe("004");
+    expect(result.edges).toHaveLength(0);
+  });
 });

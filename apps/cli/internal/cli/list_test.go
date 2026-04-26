@@ -100,6 +100,8 @@ func resetListFlags() {
 	listLimit = 0
 	listScope = ""
 	listPhase = ""
+	listStatus = ""
+	listPriority = ""
 	noColor = true
 }
 

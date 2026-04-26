@@ -31,6 +31,8 @@ var (
 	nextPhase        string
 	nextStrictPhases bool
 	nextColumns      string
+	nextStatus       string
+	nextPriority     string
 )
 
 var nextCmd = &cobra.Command{
@@ -49,8 +51,9 @@ Examples:
   taskmd next
   taskmd next ./tasks
   taskmd next --limit 3
+  taskmd next --priority high
+  taskmd next --priority high --format json
   taskmd next --filter tag=cli
-  taskmd next --filter priority=high --format json
   taskmd next --quick-wins
   taskmd next --critical --limit 1
   taskmd next --scope web/graph
@@ -75,6 +78,8 @@ func init() {
 	nextCmd.Flags().StringVar(&nextPhase, "phase", "", "filter by phase")
 	nextCmd.Flags().BoolVar(&nextStrictPhases, "strict-phases", false, "enforce strict phase ordering (earlier phases always rank first)")
 	nextCmd.Flags().StringVar(&nextColumns, "columns", nextDefaultColumns, "comma-separated columns for table output (e.g. rank,id,title,reason)")
+	nextCmd.Flags().StringVar(&nextStatus, "status", "", "shortcut for --filter status=<value>")
+	nextCmd.Flags().StringVar(&nextPriority, "priority", "", "shortcut for --filter priority=<value>")
 }
 
 func runNext(cmd *cobra.Command, args []string) error {
@@ -100,6 +105,8 @@ func runNext(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("archive scan failed: %w", err)
 	}
+
+	expandNextShortcutFilters()
 
 	phaseOrder := loadPhaseOrder()
 
@@ -138,6 +145,8 @@ type ProjectRecommendation struct {
 }
 
 func runNextAllProjects() error {
+	expandNextShortcutFilters()
+
 	allRecs, err := collectAllProjectRecs()
 	if err != nil {
 		return err
@@ -260,6 +269,16 @@ func projectRecRow(rec ProjectRecommendation, columns []string, r *lipgloss.Rend
 		}
 	}
 	return plain, colored
+}
+
+// expandNextShortcutFilters appends --status and --priority values to nextFilters.
+func expandNextShortcutFilters() {
+	if nextStatus != "" {
+		nextFilters = append(nextFilters, "status="+nextStatus)
+	}
+	if nextPriority != "" {
+		nextFilters = append(nextFilters, "priority="+nextPriority)
+	}
 }
 
 // loadPhaseOrder reads phase identifiers from the viper config, preserving order.

@@ -8,7 +8,7 @@ status: pending
 priority: medium
 type: feature
 tags: []
-created: "{{date}}"
+created_at: "{{date}}"
 ---
 
 # {{title}}

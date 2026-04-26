@@ -312,6 +312,79 @@ func TestSetTool_NoFieldsToUpdate(t *testing.T) {
 	})
 }
 
+func TestSetTool_CompletedDateAutoSet(t *testing.T) {
+	tmpDir := createTestTaskFiles(t)
+	session := setupTestServer(t)
+
+	out := callSet(t, session, map[string]any{
+		"task_dir": tmpDir,
+		"task_id":  "001",
+		"status":   "completed",
+	})
+
+	if out.Updated["completed_at"] == "" {
+		t.Error("expected completed_at date in output")
+	}
+
+	content := readFileContent(t, filepath.Join(tmpDir, "001-setup.md"))
+	if !strings.Contains(content, "completed_at: ") {
+		t.Errorf("expected completed_at date in file, got:\n%s", content)
+	}
+}
+
+func TestSetTool_CompletedDateClearedOnReopen(t *testing.T) {
+	tmpDir := createTestTaskFiles(t)
+	session := setupTestServer(t)
+
+	// First complete the task
+	callSet(t, session, map[string]any{
+		"task_dir": tmpDir,
+		"task_id":  "001",
+		"status":   "completed",
+	})
+
+	// Verify completed was set
+	content := readFileContent(t, filepath.Join(tmpDir, "001-setup.md"))
+	if !strings.Contains(content, "completed_at: ") {
+		t.Fatalf("expected completed_at date after completing, got:\n%s", content)
+	}
+
+	// Reopen the task
+	callSet(t, session, map[string]any{
+		"task_dir": tmpDir,
+		"task_id":  "001",
+		"status":   "pending",
+	})
+
+	content = readFileContent(t, filepath.Join(tmpDir, "001-setup.md"))
+	if strings.Contains(content, "completed_at:") {
+		t.Errorf("expected completed_at field to be removed after reopen, got:\n%s", content)
+	}
+}
+
+func TestSetTool_CancelledDateAutoSet(t *testing.T) {
+	tmpDir := createTestTaskFiles(t)
+	session := setupTestServer(t)
+
+	out := callSet(t, session, map[string]any{
+		"task_dir": tmpDir,
+		"task_id":  "001",
+		"status":   "cancelled",
+	})
+
+	if out.Updated["cancelled_at"] == "" {
+		t.Error("expected cancelled_at date in output")
+	}
+
+	content := readFileContent(t, filepath.Join(tmpDir, "001-setup.md"))
+	if !strings.Contains(content, "cancelled_at: ") {
+		t.Errorf("expected cancelled_at date in file, got:\n%s", content)
+	}
+	if strings.Contains(content, "completed_at:") {
+		t.Error("expected no completed_at field when cancelling")
+	}
+}
+
 func TestSetTool_Discoverable(t *testing.T) {
 	session := setupTestServer(t)
 

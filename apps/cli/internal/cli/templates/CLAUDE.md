@@ -13,7 +13,7 @@ priority: high
 effort: medium
 dependencies: ["002"]
 tags: [feature]
-created: 2026-01-15
+created_at: 2026-01-15
 ---
 
 # Task Title

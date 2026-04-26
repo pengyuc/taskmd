@@ -11,21 +11,25 @@ import (
 // Criteria represents a single filter condition.
 type Criteria struct {
 	Field string
+	Op    string // "=", ">", ">=", "<", "<="
 	Value string
+}
+
+// ordinalFields maps field names to their ordered values (lowest to highest).
+var ordinalFields = map[string][]string{
+	"priority": {"low", "medium", "high", "critical"},
+	"effort":   {"small", "medium", "large"},
 }
 
 // Apply applies multiple filter expressions to tasks (AND logic).
 func Apply(tasks []*model.Task, filterExprs []string) ([]*model.Task, error) {
 	filters := make([]Criteria, 0, len(filterExprs))
 	for _, expr := range filterExprs {
-		parts := strings.SplitN(expr, "=", 2)
-		if len(parts) != 2 {
-			return nil, fmt.Errorf("invalid filter format (expected field=value): %s", expr)
+		c, err := parseExpr(expr)
+		if err != nil {
+			return nil, err
 		}
-		filters = append(filters, Criteria{
-			Field: strings.TrimSpace(parts[0]),
-			Value: strings.TrimSpace(parts[1]),
-		})
+		filters = append(filters, c)
 	}
 
 	var filtered []*model.Task
@@ -38,16 +42,82 @@ func Apply(tasks []*model.Task, filterExprs []string) ([]*model.Task, error) {
 	return filtered, nil
 }
 
+// parseExpr parses a filter expression like "field=value", "field>=value", etc.
+func parseExpr(expr string) (Criteria, error) {
+	// Check for two-char operators first, then single-char.
+	for _, op := range []string{">=", "<=", ">", "<"} {
+		idx := strings.Index(expr, op)
+		if idx > 0 {
+			field := strings.TrimSpace(expr[:idx])
+			value := strings.TrimSpace(expr[idx+len(op):])
+			if value == "" {
+				return Criteria{}, fmt.Errorf("invalid filter format (missing value): %s", expr)
+			}
+			ranks, ok := ordinalFields[field]
+			if !ok {
+				return Criteria{}, fmt.Errorf("operator %q is not supported for field %q (only priority and effort support ordering)", op, field)
+			}
+			if !slices.Contains(ranks, value) {
+				return Criteria{}, fmt.Errorf("unknown %s value %q (valid: %s)", field, value, strings.Join(ranks, ", "))
+			}
+			return Criteria{Field: field, Op: op, Value: value}, nil
+		}
+	}
+
+	parts := strings.SplitN(expr, "=", 2)
+	if len(parts) != 2 {
+		return Criteria{}, fmt.Errorf("invalid filter format (expected field=value): %s", expr)
+	}
+	return Criteria{
+		Field: strings.TrimSpace(parts[0]),
+		Op:    "=",
+		Value: strings.TrimSpace(parts[1]),
+	}, nil
+}
+
 func matchesAll(task *model.Task, filters []Criteria) bool {
 	for _, f := range filters {
-		if !matches(task, f.Field, f.Value) {
+		if !matchesCriteria(task, f) {
 			return false
 		}
 	}
 	return true
 }
 
-func matches(task *model.Task, field, value string) bool {
+func matchesCriteria(task *model.Task, c Criteria) bool {
+	if c.Op != "=" {
+		return matchesOrdinal(task, c)
+	}
+	return matchesEquality(task, c.Field, c.Value)
+}
+
+// matchesOrdinal handles >, >=, <, <= for ordinal fields.
+func matchesOrdinal(task *model.Task, c Criteria) bool {
+	v, ok := getFieldValue(task, c.Field)
+	if !ok || v == "" {
+		return false
+	}
+	ranks := ordinalFields[c.Field]
+	taskRank := slices.Index(ranks, v)
+	filterRank := slices.Index(ranks, c.Value)
+	if taskRank < 0 || filterRank < 0 {
+		return false
+	}
+	switch c.Op {
+	case ">":
+		return taskRank > filterRank
+	case ">=":
+		return taskRank >= filterRank
+	case "<":
+		return taskRank < filterRank
+	case "<=":
+		return taskRank <= filterRank
+	default:
+		return false
+	}
+}
+
+func matchesEquality(task *model.Task, field, value string) bool {
 	if v, ok := getFieldValue(task, field); ok {
 		if field == "group" && strings.Contains(value, "*") {
 			return MatchScope(value, v)

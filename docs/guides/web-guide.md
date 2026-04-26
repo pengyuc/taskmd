@@ -6,7 +6,7 @@ Complete guide to using the taskmd web interface.
 
 - Starting the web server
 - Navigating the interface
-- Using all views (Tasks, Board, Graph, Stats, Next, Tracks, Validate)
+- Using all views (Tasks, Board, Graph, Stats, Next, Tracks, Phases, Feed, Validate)
 - Task editing, filtering, and searching
 - Static site export and read-only mode
 - API endpoints
@@ -78,6 +78,7 @@ The top navigation bar provides quick access to all views:
 - **Next** - Task recommendations
 - **Tracks** - Parallel work tracks
 - **Phases** - Project phase overview
+- **Feed** - Chronological activity feed
 - **Validate** - Task validation results
 
 ### Views
@@ -328,7 +329,27 @@ Overview of project phases with progress tracking.
 - Milestone tracking
 - Sprint progress overview
 
-#### 8. Validate View
+#### 8. Feed View
+
+**URL:** `http://localhost:8080/feed`
+
+Chronological activity feed showing recent task changes from git history and worklogs.
+
+**Features:**
+- Source filter to show all activity, git commits only, or worklog entries only
+- Time range filter (24 hours, 7 days, 30 days, or all time)
+- Scope filter to narrow to a specific task group (e.g. `cli`)
+- Entries show timestamp, author, commit message or worklog note, and linked task IDs
+- Git entries display per-file changes with field change badges (e.g. status transitions) and subtask completions
+- Worklog entries are distinguished with a separate icon
+
+**Best for:**
+- Reviewing recent project activity
+- Understanding what changed and when
+- Tracking teammate contributions
+- Daily standup preparation
+
+#### 9. Validate View
 
 **URL:** `http://localhost:8080/validate`
 
@@ -344,7 +365,7 @@ Validation results for task files, showing errors and warnings.
 - Finding broken dependencies
 - Ensuring task file consistency
 
-#### 9. Task Detail View
+#### 10. Task Detail View
 
 **URL:** `http://localhost:8080/tasks/{id}`
 
@@ -419,7 +440,7 @@ The Board page includes interactive pill-based filters:
 
 - **Status** — pending, in-progress, completed, blocked, cancelled
 - **Priority** — critical, high, medium, low
-- **Effort** — XS, S, M, L, XL
+- **Effort** — small, medium, large
 - **Type** — feature, bug, chore, docs, test
 - **Tags** — autocomplete dropdown with all available tags
 
@@ -978,6 +999,7 @@ The web server exposes a JSON API you can access directly. All endpoints return 
 | `GET` | `/api/stats` | Project statistics and metrics |
 | `GET` | `/api/next?limit=<n>&filter=<expr>` | Scored task recommendations with reasons (filter is repeatable) |
 | `GET` | `/api/tracks?filter=<expr>&scope=<s>&limit=<n>` | Parallel work tracks grouped by scope overlap |
+| `GET` | `/api/feed?source=<s>&since=<d>&scope=<g>&limit=<n>` | Chronological activity feed from git and worklogs |
 | `GET` | `/api/validate` | Validation errors and warnings for all tasks |
 
 #### Other Endpoints

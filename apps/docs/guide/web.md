@@ -133,6 +133,19 @@ Overview of project phases with progress tracking.
 - Unphased tasks section showing tasks not assigned to any phase
 - Defined via the `phases` key in `.taskmd.yaml`
 
+### Feed View
+
+**URL:** `/feed`
+
+Chronological activity feed showing recent task changes from git history and worklogs.
+
+- **Source filter** - show all activity, git commits only, or worklog entries only
+- **Time range** - filter by recency (24 hours, 7 days, 30 days, or all time)
+- **Scope filter** - narrow to a specific task group (e.g. `cli`)
+- Entries show timestamp, author, commit message or worklog note, and linked task IDs
+- Git entries display per-file changes with field change badges (e.g. status transitions) and subtask completions
+- Worklog entries are distinguished with a separate icon
+
 ### Validate View
 
 **URL:** `/validate`
@@ -216,7 +229,7 @@ The Board page includes interactive pill-based filters for narrowing displayed t
 
 - **Status** — pending, in-progress, completed, blocked, cancelled
 - **Priority** — critical, high, medium, low
-- **Effort** — XS, S, M, L, XL
+- **Effort** — small, medium, large
 - **Type** — feature, bug, chore, docs, test
 - **Tags** — autocomplete dropdown with all available tags
 
@@ -280,6 +293,7 @@ The web server exposes a JSON API you can access directly. All endpoints return 
 | `GET` | `/api/stats` | Project statistics and metrics |
 | `GET` | `/api/next?limit=<n>&filter=<expr>` | Scored task recommendations with reasons (filter is repeatable) |
 | `GET` | `/api/tracks?filter=<expr>&scope=<s>&limit=<n>` | Parallel work tracks grouped by scope overlap |
+| `GET` | `/api/feed?source=<s>&since=<d>&scope=<g>&limit=<n>` | Chronological activity feed from git and worklogs |
 | `GET` | `/api/validate` | Validation errors and warnings for all tasks |
 
 ### Other Endpoints

@@ -61,6 +61,18 @@ describe("BoardColumn", () => {
     expect(screen.getByText("No tasks")).toBeInTheDocument();
   });
 
+  it("applies in-review status color to column", () => {
+    const { container } = renderColumn({
+      group: makeGroup({
+        group: "in-review",
+        count: 1,
+        tasks: [{ id: "001", title: "Review task", status: "in-review" }],
+      }),
+    });
+    const col = container.firstElementChild!;
+    expect(col.className).toContain("border-purple-300");
+  });
+
   describe("drag handlers", () => {
     it("handleDragOver sets dropEffect to move", () => {
       const { container } = renderColumn();

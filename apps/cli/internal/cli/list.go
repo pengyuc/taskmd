@@ -15,13 +15,15 @@ import (
 )
 
 var (
-	listFormat  string
-	listFilters []string
-	listSort    string
-	listColumns string
-	listLimit   int
-	listScope   string
-	listPhase   string
+	listFormat   string
+	listFilters  []string
+	listSort     string
+	listColumns  string
+	listLimit    int
+	listScope    string
+	listPhase    string
+	listStatus   string
+	listPriority string
 )
 
 // listCmd represents the list command
@@ -38,11 +40,16 @@ Output formats: table (default), json, yaml
 
 Multiple --filter flags are combined with AND logic.
 
+Priority and effort support comparison operators (>=, >, <=, <).
+
 Examples:
   taskmd list
   taskmd list ./tasks
-  taskmd list --filter status=pending
+  taskmd list --status pending
+  taskmd list --status pending --priority high
   taskmd list --filter status=pending --filter priority=high
+  taskmd list --filter "priority>=medium"
+  taskmd list --filter "effort<large"
   taskmd list --sort priority
   taskmd list --columns id,title,deps
   taskmd list --format json
@@ -57,12 +64,14 @@ func init() {
 	rootCmd.AddCommand(listCmd)
 
 	listCmd.Flags().StringVar(&listFormat, "format", "table", "output format (table, json, yaml)")
-	listCmd.Flags().StringArrayVar(&listFilters, "filter", []string{}, "filter tasks (can specify multiple times for AND conditions, e.g., --filter status=pending --filter priority=high)")
-	listCmd.Flags().StringVar(&listSort, "sort", "", "sort by field (id, title, status, priority, effort, created)")
+	listCmd.Flags().StringArrayVar(&listFilters, "filter", []string{}, "filter tasks (e.g., --filter status=pending --filter \"priority>=medium\"); supports >=, >, <=, < for priority and effort")
+	listCmd.Flags().StringVar(&listSort, "sort", "", "sort by field (id, title, status, priority, effort, created_at)")
 	listCmd.Flags().StringVar(&listColumns, "columns", "id,title,status,priority,file", "comma-separated list of columns to display")
 	listCmd.Flags().IntVar(&listLimit, "limit", 0, "maximum number of tasks to display (0 = unlimited)")
 	listCmd.Flags().StringVar(&listScope, "scope", "", "filter by scope; supports wildcards (e.g. cli, cli*)")
 	listCmd.Flags().StringVar(&listPhase, "phase", "", "filter by phase")
+	listCmd.Flags().StringVar(&listStatus, "status", "", "shortcut for --filter status=<value>")
+	listCmd.Flags().StringVar(&listPriority, "priority", "", "shortcut for --filter priority=<value>")
 }
 
 func runList(cmd *cobra.Command, args []string) error {
@@ -219,23 +228,15 @@ func outputProjectTable(ptasks []*ProjectTask, columnsStr string) error {
 func applyListFiltersAndSort(tasks []*model.Task) ([]*model.Task, error) {
 	var err error
 
-	// Apply filters (multiple filters are AND'ed together)
-	if len(listFilters) > 0 {
-		tasks, err = applyFilters(tasks, listFilters)
-		if err != nil {
-			return nil, fmt.Errorf("filter error: %w", err)
-		}
-	}
-
-	// Apply scope filter
-	if listScope != "" {
-		warnUnknownScope(listScope)
-		tasks = filterTasksByScope(tasks, listScope)
-	}
-
-	// Apply phase filter
-	if listPhase != "" {
-		tasks = filterTasksByPhase(tasks, listPhase)
+	tasks, err = applyShortcutFilters(tasks, FilterShortcuts{
+		Status:   listStatus,
+		Priority: listPriority,
+		Phase:    listPhase,
+		Scope:    listScope,
+		Filters:  listFilters,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	// Apply sorting
@@ -287,7 +288,7 @@ func sortTasks(tasks []*model.Task, sortField string) error {
 		sort.Slice(tasks, func(i, j int) bool {
 			return effortOrder[tasks[i].Effort] < effortOrder[tasks[j].Effort]
 		})
-	case "created":
+	case "created", "created_at":
 		sort.Slice(tasks, func(i, j int) bool {
 			return tasks[i].Created.Before(tasks[j].Created.Time)
 		})
@@ -401,7 +402,7 @@ func getColumnValue(task *model.Task, column string) string {
 		return scalar
 	}
 	switch column {
-	case "created":
+	case "created", "created_at":
 		if task.Created.IsZero() {
 			return ""
 		}

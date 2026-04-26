@@ -27,12 +27,12 @@ The user's arguments are in `$ARGUMENTS` (e.g. `--status pending`, `--priority h
 4. **Apply filters** from `$ARGUMENTS`:
    - `--status <value>`: Show only tasks matching this status
    - `--priority <value>`: Show only tasks matching this priority
-   - `--effort <value>`: Show only tasks matching this effort
-   - `--type <value>`: Show only tasks matching this type
-   - `--tag <value>`: Show only tasks containing this tag
-   - `--owner <value>`: Show only tasks matching this owner
+   - `--filter effort=<value>`: Show only tasks matching this effort (supports >=, >, <=, <)
+   - `--filter type=<value>`: Show only tasks matching this type
+   - `--filter tags=<value>`: Show only tasks containing this tag
+   - `--filter owner=<value>`: Show only tasks matching this owner
    - `--phase <value>`: Show only tasks matching this phase
-   - `--group <value>`: Show only tasks in this group
+   - `--scope <value>`: Show only tasks in this scope (supports wildcards)
    - A directory path: Only scan that directory instead of the full task dir
 
 5. **Display results** as a formatted table:

@@ -8,7 +8,7 @@ status: pending
 priority: low
 type: chore
 tags: []
-created: "{{date}}"
+created_at: "{{date}}"
 ---
 
 # {{title}}

@@ -20,7 +20,7 @@ var validEffortValues = []string{"small", "medium", "large"}
 var validTypeValues = []string{"feature", "bug", "improvement", "chore", "docs"}
 
 // validSortFields lists all valid sort field values for the list command.
-var validSortFields = []string{"id", "title", "status", "priority", "effort", "created"}
+var validSortFields = []string{"id", "title", "status", "priority", "effort", "created", "created_at"}
 
 // suggestValue finds the closest match from valid options using Levenshtein distance.
 // Returns the closest match, or empty string if no reasonable match exists.

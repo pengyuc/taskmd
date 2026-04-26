@@ -732,6 +732,73 @@ func TestIsAlphanumericID(t *testing.T) {
 	}
 }
 
+func TestParseTaskContent_CreatedAtField(t *testing.T) {
+	content := []byte(`---
+id: "060"
+title: "New style date"
+status: pending
+created_at: 2026-03-15
+---
+
+# New style date
+`)
+
+	task, err := ParseTaskContent("test.md", content)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	expectedDate := time.Date(2026, 3, 15, 0, 0, 0, 0, time.UTC)
+	if !task.Created.Equal(expectedDate) {
+		t.Errorf("expected created date %v, got %v", expectedDate, task.Created)
+	}
+}
+
+func TestParseTaskContent_CreatedAtPreferredOverCreated(t *testing.T) {
+	content := []byte(`---
+id: "061"
+title: "Both dates"
+status: pending
+created_at: 2026-04-01
+created: 2026-01-01
+---
+
+# Both dates
+`)
+
+	task, err := ParseTaskContent("test.md", content)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	expectedDate := time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC)
+	if !task.Created.Equal(expectedDate) {
+		t.Errorf("expected created_at to take precedence, got %v", task.Created)
+	}
+}
+
+func TestParseTaskContent_DeprecatedCreatedStillWorks(t *testing.T) {
+	content := []byte(`---
+id: "062"
+title: "Old style date"
+status: pending
+created: 2026-02-20
+---
+
+# Old style date
+`)
+
+	task, err := ParseTaskContent("test.md", content)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	expectedDate := time.Date(2026, 2, 20, 0, 0, 0, 0, time.UTC)
+	if !task.Created.Equal(expectedDate) {
+		t.Errorf("expected deprecated created field to work, got %v", task.Created)
+	}
+}
+
 // Helper function
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) &&

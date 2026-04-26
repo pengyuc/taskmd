@@ -140,6 +140,8 @@ func runSet(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	applyTerminalDateLogic(task, &req)
+
 	if err := runSetVerification(task, req); err != nil {
 		return err
 	}
@@ -181,6 +183,28 @@ func resolveDoneFlag(cmd *cobra.Command) error {
 		}
 	}
 	return nil
+}
+
+// applyTerminalDateLogic auto-sets or clears completed_at/cancelled_at based on status transitions.
+func applyTerminalDateLogic(task *model.Task, req *taskfile.UpdateRequest) {
+	if req.Status == nil {
+		return
+	}
+	today := time.Now().Format("2006-01-02")
+	newStatus := model.Status(*req.Status)
+	wasTerminal := task.Status.IsResolved()
+
+	switch {
+	case newStatus == model.StatusCompleted:
+		req.Completed = &today
+		req.RemoveFields = append(req.RemoveFields, "cancelled_at")
+	case newStatus == model.StatusCancelled:
+		req.CancelledAt = &today
+		req.RemoveFields = append(req.RemoveFields, "completed_at")
+	case wasTerminal:
+		// Reopening: task was completed/cancelled, now moving to a non-terminal status.
+		req.RemoveFields = append(req.RemoveFields, "completed_at", "cancelled_at")
+	}
 }
 
 func buildSetRequest(cmd *cobra.Command) (taskfile.UpdateRequest, error) {
@@ -266,39 +290,37 @@ func listChangeEntry(field string, current, add, remove []string) *changeEntry {
 	}
 }
 
+func scalarChangeEntry(field, oldValue string, newValue *string) *changeEntry {
+	if newValue == nil {
+		return nil
+	}
+	return &changeEntry{field: field, oldValue: oldValue, newValue: *newValue}
+}
+
 func buildChangeLog(task *model.Task, req taskfile.UpdateRequest) []changeEntry {
-	oldValues := map[string]string{
-		"status":   string(task.Status),
-		"priority": string(task.Priority),
-		"effort":   string(task.Effort),
-		"type":     string(task.Type),
-		"owner":    task.Owner,
-		"parent":   task.Parent,
-		"phase":    task.Phase,
-	}
-
 	var changes []changeEntry
-
-	if req.Status != nil {
-		changes = append(changes, changeEntry{field: "status", oldValue: oldValues["status"], newValue: *req.Status})
+	for _, sc := range []struct {
+		field    string
+		oldValue string
+		newValue *string
+	}{
+		{"status", string(task.Status), req.Status},
+		{"priority", string(task.Priority), req.Priority},
+		{"effort", string(task.Effort), req.Effort},
+		{"type", string(task.Type), req.Type},
+		{"owner", task.Owner, req.Owner},
+		{"parent", task.Parent, req.Parent},
+		{"phase", task.Phase, req.Phase},
+	} {
+		if ce := scalarChangeEntry(sc.field, sc.oldValue, sc.newValue); ce != nil {
+			changes = append(changes, *ce)
+		}
 	}
-	if req.Priority != nil {
-		changes = append(changes, changeEntry{field: "priority", oldValue: oldValues["priority"], newValue: *req.Priority})
+	if ce := terminalDateChangeEntry("completed_at", task.Completed, req.Completed, req.RemoveFields); ce != nil {
+		changes = append(changes, *ce)
 	}
-	if req.Effort != nil {
-		changes = append(changes, changeEntry{field: "effort", oldValue: oldValues["effort"], newValue: *req.Effort})
-	}
-	if req.Type != nil {
-		changes = append(changes, changeEntry{field: "type", oldValue: oldValues["type"], newValue: *req.Type})
-	}
-	if req.Owner != nil {
-		changes = append(changes, changeEntry{field: "owner", oldValue: oldValues["owner"], newValue: *req.Owner})
-	}
-	if req.Parent != nil {
-		changes = append(changes, changeEntry{field: "parent", oldValue: oldValues["parent"], newValue: *req.Parent})
-	}
-	if req.Phase != nil {
-		changes = append(changes, changeEntry{field: "phase", oldValue: oldValues["phase"], newValue: *req.Phase})
+	if ce := terminalDateChangeEntry("cancelled_at", task.CancelledAt, req.CancelledAt, req.RemoveFields); ce != nil {
+		changes = append(changes, *ce)
 	}
 
 	for _, entry := range []struct {
@@ -325,6 +347,22 @@ func buildChangeLog(task *model.Task, req taskfile.UpdateRequest) []changeEntry 
 	}
 
 	return changes
+}
+
+func terminalDateChangeEntry(field string, oldTime model.FlexibleTime, newValue *string, removeFields []string) *changeEntry {
+	old := ""
+	if !oldTime.IsZero() {
+		old = oldTime.Format("2006-01-02")
+	}
+	if newValue != nil {
+		return &changeEntry{field: field, oldValue: old, newValue: *newValue}
+	}
+	for _, f := range removeFields {
+		if f == field && old != "" {
+			return &changeEntry{field: field, oldValue: old, newValue: "(cleared)"}
+		}
+	}
+	return nil
 }
 
 func printSetConfirmation(task *model.Task, changes []changeEntry) {

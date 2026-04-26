@@ -3,6 +3,7 @@ import { useState } from "react";
 const STATUS_ITEMS = [
   { label: "Pending", bg: "bg-yellow-50 dark:bg-yellow-900/20", border: "border-yellow-300 dark:border-yellow-700" },
   { label: "In Progress", bg: "bg-blue-50 dark:bg-blue-900/20", border: "border-blue-300 dark:border-blue-700" },
+  { label: "In Review", bg: "bg-purple-50 dark:bg-purple-900/20", border: "border-purple-300 dark:border-purple-700" },
   { label: "Completed", bg: "bg-green-50 dark:bg-green-900/20", border: "border-green-300 dark:border-green-700" },
   { label: "Blocked", bg: "bg-red-50 dark:bg-red-900/20", border: "border-red-300 dark:border-red-700" },
   { label: "Cancelled", bg: "bg-gray-50 dark:bg-gray-800", border: "border-gray-300 dark:border-gray-600" },

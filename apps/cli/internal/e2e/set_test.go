@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -110,4 +111,89 @@ func TestSet_DependsOn_Clear(t *testing.T) {
 	if strings.Contains(fileStr, "dependencies:") {
 		t.Errorf("Expected dependencies line to be removed, got:\n%s", fileStr)
 	}
+}
+
+func TestSet_CompletedDate_AutoSet(t *testing.T) {
+	dir := setupTaskDir(t)
+	writeTask(t, dir, "001-setup.md", "001", "Setup", "pending", nil)
+
+	result := mustRun(t, dir, "set", "001", "--status", "completed")
+
+	if !strings.Contains(result.Stdout, "completed_at:") {
+		t.Errorf("Expected completed_at date in output, got: %s", result.Stdout)
+	}
+
+	content, err := os.ReadFile(filepath.Join(dir, "001-setup.md"))
+	if err != nil {
+		t.Fatalf("failed to read task file: %v", err)
+	}
+	fileStr := string(content)
+	if !strings.Contains(fileStr, "status: completed") {
+		t.Error("Expected status to be completed")
+	}
+	if !strings.Contains(fileStr, "completed_at: ") {
+		t.Errorf("Expected completed_at date in file, got:\n%s", fileStr)
+	}
+}
+
+func TestSet_CompletedDate_ClearedOnReopen(t *testing.T) {
+	dir := setupTaskDir(t)
+
+	// Write a task that is already completed with a completed_at date
+	taskContent := fmt.Sprintf(`---
+id: "001"
+title: "Setup"
+status: completed
+priority: medium
+effort: small
+dependencies: []
+tags: ["e2e"]
+completed_at: 2026-03-01
+created: 2026-01-01
+---
+
+# Setup
+`)
+	path := filepath.Join(dir, "001-setup.md")
+	if err := os.WriteFile(path, []byte(taskContent), 0644); err != nil {
+		t.Fatalf("failed to write task file: %v", err)
+	}
+
+	result := mustRun(t, dir, "set", "001", "--status", "pending")
+
+	if !strings.Contains(result.Stdout, "completed_at:") {
+		t.Errorf("Expected completed_at change in output, got: %s", result.Stdout)
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read task file: %v", err)
+	}
+	fileStr := string(content)
+	if !strings.Contains(fileStr, "status: pending") {
+		t.Error("Expected status to be pending")
+	}
+	if strings.Contains(fileStr, "completed_at:") {
+		t.Errorf("Expected completed_at field to be removed, got:\n%s", fileStr)
+	}
+}
+
+func TestSet_CancelledDate_AutoSet(t *testing.T) {
+	dir := setupTaskDir(t)
+	writeTask(t, dir, "001-setup.md", "001", "Setup", "pending", nil)
+
+	result := mustRun(t, dir, "set", "001", "--status", "cancelled")
+
+	content, err := os.ReadFile(filepath.Join(dir, "001-setup.md"))
+	if err != nil {
+		t.Fatalf("failed to read task file: %v", err)
+	}
+	fileStr := string(content)
+	if !strings.Contains(fileStr, "cancelled_at: ") {
+		t.Errorf("Expected cancelled_at date for cancelled status, got:\n%s", fileStr)
+	}
+	if strings.Contains(fileStr, "completed_at:") {
+		t.Error("Expected no completed_at field when cancelling")
+	}
+	_ = result
 }

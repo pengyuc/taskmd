@@ -25,7 +25,10 @@ type UpdateRequest struct {
 	AddTouches   []string  // add scope identifiers to touches
 	RemTouches   []string  // remove scope identifiers from touches
 	Phase        *string
+	Completed    *string   // completed date (YYYY-MM-DD)
+	CancelledAt  *string   // cancelled date (YYYY-MM-DD)
 	Dependencies *[]string // replace dependencies entirely
+	RemoveFields []string  // field keys to remove entirely from frontmatter
 	Body         *string
 }
 
@@ -94,6 +97,9 @@ func UpdateTaskFile(filePath string, req UpdateRequest) error {
 	// Apply scalar field updates within frontmatter.
 	lines, closeIdx = applyScalarUpdates(lines, openIdx, closeIdx, req)
 
+	// Remove fields requested for deletion.
+	lines, closeIdx = removeFields(lines, openIdx, closeIdx, req.RemoveFields)
+
 	// Apply tag updates.
 	if req.Tags != nil {
 		lines, closeIdx = setTags(lines, openIdx, closeIdx, *req.Tags)
@@ -161,6 +167,12 @@ func buildScalarUpdates(req UpdateRequest) []scalarUpdate {
 	if req.Phase != nil {
 		updates = append(updates, scalarUpdate{key: "phase", value: *req.Phase})
 	}
+	if req.Completed != nil {
+		updates = append(updates, scalarUpdate{key: "completed_at", value: *req.Completed})
+	}
+	if req.CancelledAt != nil {
+		updates = append(updates, scalarUpdate{key: "cancelled_at", value: *req.CancelledAt})
+	}
 	return updates
 }
 
@@ -188,6 +200,28 @@ func applyScalarUpdates(lines []string, openIdx, closeIdx int, req UpdateRequest
 		}
 	}
 
+	return lines, closeIdx
+}
+
+// removeFields removes frontmatter lines whose key matches one of the given field names.
+func removeFields(lines []string, openIdx, closeIdx int, fields []string) ([]string, int) {
+	if len(fields) == 0 {
+		return lines, closeIdx
+	}
+	removeSet := make(map[string]bool, len(fields))
+	for _, f := range fields {
+		removeSet[f] = true
+	}
+	for i := closeIdx - 1; i > openIdx; i-- {
+		trimmed := strings.TrimSpace(lines[i])
+		for key := range removeSet {
+			if strings.HasPrefix(trimmed, key+":") {
+				lines = append(lines[:i], lines[i+1:]...)
+				closeIdx--
+				break
+			}
+		}
+	}
 	return lines, closeIdx
 }
 

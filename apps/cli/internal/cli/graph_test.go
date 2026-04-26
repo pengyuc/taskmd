@@ -1012,6 +1012,9 @@ func resetGraphFlags() {
 	graphOut = ""
 	graphFilters = []string{}
 	graphScope = ""
+	graphStatus = ""
+	graphPriority = ""
+	graphPhase = ""
 }
 
 // captureGraphOutput runs runGraph and captures stdout, returning the output string.
@@ -1455,5 +1458,173 @@ func TestGraphCommand_Scope_Wildcard(t *testing.T) {
 
 	if !idSet["001"] || !idSet["003"] {
 		t.Errorf("Expected tasks 001 and 003 for wildcard w*, got %v", ids)
+	}
+}
+
+func TestGraphCommand_StatusShortcut(t *testing.T) {
+	tmpDir := createTestTaskFiles(t)
+
+	// --status pending should match --filter status=pending
+	resetGraphFlags()
+	graphStatus = "pending"
+
+	output := captureGraphOutput(t, []string{tmpDir})
+	result := parseGraphJSON(t, output)
+	ids := graphNodeIDs(t, result)
+
+	// Pending tasks: 003, 004, 005
+	if len(ids) != 3 {
+		t.Errorf("Expected 3 pending nodes, got %d: %v", len(ids), ids)
+	}
+
+	idSet := make(map[string]bool)
+	for _, id := range ids {
+		idSet[id] = true
+	}
+	if !idSet["003"] || !idSet["004"] || !idSet["005"] {
+		t.Errorf("Expected tasks 003, 004, 005, got %v", ids)
+	}
+
+	// Compare with --filter status=pending
+	resetGraphFlags()
+	graphFilters = []string{"status=pending"}
+
+	filterOutput := captureGraphOutput(t, []string{tmpDir})
+	filterResult := parseGraphJSON(t, filterOutput)
+	filterIDs := graphNodeIDs(t, filterResult)
+
+	if len(filterIDs) != len(ids) {
+		t.Errorf("--status and --filter status= produced different counts: %d vs %d", len(ids), len(filterIDs))
+	}
+}
+
+func TestGraphCommand_PriorityShortcut(t *testing.T) {
+	tmpDir := createTestTaskFiles(t)
+
+	// --priority high should match --filter priority=high
+	resetGraphFlags()
+	graphPriority = "high"
+
+	output := captureGraphOutput(t, []string{tmpDir})
+	result := parseGraphJSON(t, output)
+	ids := graphNodeIDs(t, result)
+
+	// High priority tasks: 001, 003
+	if len(ids) != 2 {
+		t.Errorf("Expected 2 high-priority nodes, got %d: %v", len(ids), ids)
+	}
+
+	idSet := make(map[string]bool)
+	for _, id := range ids {
+		idSet[id] = true
+	}
+	if !idSet["001"] || !idSet["003"] {
+		t.Errorf("Expected tasks 001 and 003, got %v", ids)
+	}
+
+	// Compare with --filter priority=high
+	resetGraphFlags()
+	graphFilters = []string{"priority=high"}
+
+	filterOutput := captureGraphOutput(t, []string{tmpDir})
+	filterResult := parseGraphJSON(t, filterOutput)
+	filterIDs := graphNodeIDs(t, filterResult)
+
+	if len(filterIDs) != len(ids) {
+		t.Errorf("--priority and --filter priority= produced different counts: %d vs %d", len(ids), len(filterIDs))
+	}
+}
+
+func TestGraphCommand_PhaseShortcut(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	tasks := map[string]string{
+		"001-phase-a.md": `---
+id: "001"
+title: "Phase A Task"
+status: pending
+priority: high
+phase: alpha
+created: 2026-02-08
+---`,
+		"002-phase-b.md": `---
+id: "002"
+title: "Phase B Task"
+status: pending
+priority: medium
+phase: beta
+created: 2026-02-08
+---`,
+		"003-no-phase.md": `---
+id: "003"
+title: "No Phase Task"
+status: pending
+priority: low
+created: 2026-02-08
+---`,
+	}
+
+	for filename, content := range tasks {
+		err := os.WriteFile(filepath.Join(tmpDir, filename), []byte(content), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create test file %s: %v", filename, err)
+		}
+	}
+
+	resetGraphFlags()
+	graphPhase = "alpha"
+
+	output := captureGraphOutput(t, []string{tmpDir})
+	result := parseGraphJSON(t, output)
+	ids := graphNodeIDs(t, result)
+
+	if len(ids) != 1 {
+		t.Errorf("Expected 1 node for phase alpha, got %d: %v", len(ids), ids)
+	}
+	if len(ids) > 0 && ids[0] != "001" {
+		t.Errorf("Expected task 001, got %v", ids)
+	}
+}
+
+func TestGraphCommand_ShortcutComposesWithRoot(t *testing.T) {
+	tmpDir := createTestTaskFiles(t)
+
+	// --status pending --root 003 --downstream
+	resetGraphFlags()
+	graphStatus = "pending"
+	graphRoot = "003"
+	graphDownstream = true
+
+	output := captureGraphOutput(t, []string{tmpDir})
+	result := parseGraphJSON(t, output)
+	ids := graphNodeIDs(t, result)
+
+	// Task 003 is pending and root; no downstream dependents of 003 exist
+	if len(ids) != 1 {
+		t.Errorf("Expected 1 node (just root 003), got %d: %v", len(ids), ids)
+	}
+	if len(ids) > 0 && ids[0] != "003" {
+		t.Errorf("Expected task 003, got %v", ids)
+	}
+}
+
+func TestGraphCommand_ShortcutComposesWithExcludeStatus(t *testing.T) {
+	tmpDir := createTestTaskFiles(t)
+
+	// --priority high --exclude-status completed should only show pending high-priority tasks
+	resetGraphFlags()
+	graphPriority = "high"
+	graphExcludeStatus = []string{"completed"}
+
+	output := captureGraphOutput(t, []string{tmpDir})
+	result := parseGraphJSON(t, output)
+	ids := graphNodeIDs(t, result)
+
+	// High priority: 001 (completed), 003 (pending) → after exclude: only 003
+	if len(ids) != 1 {
+		t.Errorf("Expected 1 node, got %d: %v", len(ids), ids)
+	}
+	if len(ids) > 0 && ids[0] != "003" {
+		t.Errorf("Expected task 003, got %v", ids)
 	}
 }

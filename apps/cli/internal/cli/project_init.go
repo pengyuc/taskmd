@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 
@@ -107,6 +108,9 @@ func runProjectInit(cmd *cobra.Command, _ []string) error {
 	// Resolve agents: flags > prompt > default (Claude)
 	resolveInitAgents(isTTY)
 
+	// Resolve templates: flags > prompt > default (yes)
+	resolveInitTemplates(isTTY)
+
 	// Resolve ID strategy: flag > prompt > default (sequential)
 	idStrategy, err := resolveInitIDStrategy(cmd, isTTY)
 	if err != nil {
@@ -125,6 +129,14 @@ func runProjectInit(cmd *cobra.Command, _ []string) error {
 	taskDirAbs := taskDirPath
 	if !filepath.IsAbs(taskDirAbs) {
 		taskDirAbs = filepath.Join(root, taskDirPath)
+	}
+
+	// Show confirmation before writing
+	if isTTY && !quiet {
+		if !confirmInitPlan(root, taskDirAbs, rootFiles, taskDirFiles) {
+			fmt.Fprintln(os.Stderr, "Cancelled.")
+			return nil
+		}
 	}
 
 	return writeProjectFiles(root, taskDirAbs, taskDirPath, idStrategy, rootFiles, taskDirFiles, quiet)
@@ -267,6 +279,74 @@ func promptAgentSelection() {
 			projectInitCodex = true
 		}
 	}
+}
+
+// resolveInitTemplates sets projectInitNoTemplates via prompt if not explicitly set.
+func resolveInitTemplates(isTTY bool) {
+	if projectInitNoTemplates {
+		return
+	}
+
+	if !isTTY {
+		return
+	}
+
+	include := true
+	err := huh.NewConfirm().
+		Title("Include task templates?").
+		Description("Copies built-in templates (feature, bug, chore) to .taskmd/templates/").
+		Value(&include).
+		WithButtonAlignment(lipgloss.Left).
+		Run()
+	if err != nil {
+		// Cancelled: default to including templates
+		return
+	}
+	projectInitNoTemplates = !include
+}
+
+// confirmInitPlan shows what will be created and asks the user to confirm.
+// Returns true if the user confirms, false if cancelled.
+func confirmInitPlan(root, taskDirAbs string, rootFiles, taskDirFiles []fileToWrite) bool {
+	fmt.Println("\nThe following will be created:")
+
+	// Task directory
+	abs, _ := filepath.Abs(taskDirAbs)
+	fmt.Printf("  %s/\n", abs)
+
+	// Config file
+	configAbs, _ := filepath.Abs(filepath.Join(root, configFilename))
+	fmt.Printf("  %s\n", configAbs)
+
+	// Root files
+	for _, f := range rootFiles {
+		p, _ := filepath.Abs(filepath.Join(root, f.filename))
+		fmt.Printf("  %s\n", p)
+	}
+
+	// Task dir files
+	for _, f := range taskDirFiles {
+		p, _ := filepath.Abs(filepath.Join(taskDirAbs, f.filename))
+		fmt.Printf("  %s\n", p)
+	}
+
+	// Templates
+	if !projectInitNoTemplates {
+		tmplAbs, _ := filepath.Abs(filepath.Join(root, ".taskmd", "templates"))
+		fmt.Printf("  %s/\n", tmplAbs)
+	}
+
+	fmt.Println()
+
+	confirm := true
+	err := huh.NewConfirm().
+		Title("Proceed?").
+		Value(&confirm).
+		Run()
+	if err != nil {
+		return false
+	}
+	return confirm
 }
 
 // idStrategyConfig holds the resolved ID strategy and associated settings.

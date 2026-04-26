@@ -1936,3 +1936,231 @@ created: 2026-02-08
 		t.Errorf("Expected phase to be cleared, got:\n%s", fileStr)
 	}
 }
+
+func TestSet_CompletedDate_AutoSetOnCompleted(t *testing.T) {
+	tmpDir := createSetTestFiles(t)
+	resetSetFlags()
+	taskDir = tmpDir
+	setTaskID = "001"
+	setStatus = "completed"
+
+	_, err := captureSetOutput(t)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	content, _ := os.ReadFile(filepath.Join(tmpDir, "001-setup.md"))
+	s := string(content)
+	if !strings.Contains(s, "status: completed") {
+		t.Error("Expected status to be completed")
+	}
+	if !strings.Contains(s, "completed_at: ") {
+		t.Errorf("Expected completed_at date to be auto-set, got:\n%s", s)
+	}
+}
+
+func TestSet_CancelledDate_AutoSetOnCancelled(t *testing.T) {
+	tmpDir := createSetTestFiles(t)
+	resetSetFlags()
+	taskDir = tmpDir
+	setTaskID = "001"
+	setStatus = "cancelled"
+
+	_, err := captureSetOutput(t)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	content, _ := os.ReadFile(filepath.Join(tmpDir, "001-setup.md"))
+	s := string(content)
+	if !strings.Contains(s, "status: cancelled") {
+		t.Error("Expected status to be cancelled")
+	}
+	if !strings.Contains(s, "cancelled_at: ") {
+		t.Errorf("Expected cancelled_at date to be auto-set, got:\n%s", s)
+	}
+	if strings.Contains(s, "completed_at:") {
+		t.Error("Expected no completed_at field when cancelling")
+	}
+}
+
+func TestSet_CompletedDate_ClearedOnReopen(t *testing.T) {
+	tmpDir := t.TempDir()
+	taskContent := `---
+id: "070"
+title: "Completed task"
+status: completed
+priority: medium
+completed_at: 2026-03-01
+created: 2026-02-08
+---
+
+# Completed task
+`
+	path := filepath.Join(tmpDir, "070-completed.md")
+	if err := os.WriteFile(path, []byte(taskContent), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	resetSetFlags()
+	taskDir = tmpDir
+	setTaskID = "070"
+	setStatus = "pending"
+
+	output, err := captureSetOutput(t)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !strings.Contains(output, "completed_at:") {
+		t.Errorf("Expected completed_at change in output, got: %s", output)
+	}
+
+	content, _ := os.ReadFile(path)
+	s := string(content)
+	if !strings.Contains(s, "status: pending") {
+		t.Error("Expected status to be pending")
+	}
+	if strings.Contains(s, "completed_at:") {
+		t.Errorf("Expected completed_at field to be removed, got:\n%s", s)
+	}
+}
+
+func TestSet_CompletedDate_DoneFlag(t *testing.T) {
+	tmpDir := createSetTestFiles(t)
+	resetSetFlags()
+	taskDir = tmpDir
+	setDone = true
+
+	_, err := captureSetOutputWithArgs(t, []string{"001"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	content, _ := os.ReadFile(filepath.Join(tmpDir, "001-setup.md"))
+	s := string(content)
+	if !strings.Contains(s, "status: completed") {
+		t.Error("Expected status to be completed via --done")
+	}
+	if !strings.Contains(s, "completed_at: ") {
+		t.Errorf("Expected completed_at date to be auto-set via --done, got:\n%s", s)
+	}
+}
+
+func TestSet_CompletedDate_NonStatusChangePreserves(t *testing.T) {
+	tmpDir := t.TempDir()
+	taskContent := `---
+id: "071"
+title: "Completed task"
+status: completed
+priority: medium
+completed_at: 2026-03-01
+created: 2026-02-08
+---
+
+# Completed task
+`
+	path := filepath.Join(tmpDir, "071-completed.md")
+	if err := os.WriteFile(path, []byte(taskContent), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	resetSetFlags()
+	taskDir = tmpDir
+	setTaskID = "071"
+	setPriority = "high"
+
+	_, err := captureSetOutput(t)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	content, _ := os.ReadFile(path)
+	s := string(content)
+	if !strings.Contains(s, "priority: high") {
+		t.Error("Expected priority to be updated")
+	}
+	if !strings.Contains(s, "completed_at: 2026-03-01") {
+		t.Errorf("Expected completed_at date to be preserved when not changing status, got:\n%s", s)
+	}
+}
+
+func TestSet_CancelledDate_ClearedOnReopen(t *testing.T) {
+	tmpDir := t.TempDir()
+	taskContent := `---
+id: "072"
+title: "Cancelled task"
+status: cancelled
+priority: medium
+cancelled_at: 2026-03-01
+created: 2026-02-08
+---
+
+# Cancelled task
+`
+	path := filepath.Join(tmpDir, "072-cancelled.md")
+	if err := os.WriteFile(path, []byte(taskContent), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	resetSetFlags()
+	taskDir = tmpDir
+	setTaskID = "072"
+	setStatus = "pending"
+
+	output, err := captureSetOutput(t)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !strings.Contains(output, "cancelled_at:") {
+		t.Errorf("Expected cancelled_at change in output, got: %s", output)
+	}
+
+	content, _ := os.ReadFile(path)
+	s := string(content)
+	if !strings.Contains(s, "status: pending") {
+		t.Error("Expected status to be pending")
+	}
+	if strings.Contains(s, "cancelled_at:") {
+		t.Errorf("Expected cancelled_at field to be removed, got:\n%s", s)
+	}
+}
+
+func TestSet_CompletedDate_ClearsOnCancel(t *testing.T) {
+	tmpDir := t.TempDir()
+	taskContent := `---
+id: "073"
+title: "Completed then cancelled"
+status: completed
+priority: medium
+completed_at: 2026-03-01
+created: 2026-02-08
+---
+
+# Completed then cancelled
+`
+	path := filepath.Join(tmpDir, "073-task.md")
+	if err := os.WriteFile(path, []byte(taskContent), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	resetSetFlags()
+	taskDir = tmpDir
+	setTaskID = "073"
+	setStatus = "cancelled"
+
+	_, err := captureSetOutput(t)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	content, _ := os.ReadFile(path)
+	s := string(content)
+	if !strings.Contains(s, "cancelled_at: ") {
+		t.Errorf("Expected cancelled_at to be set, got:\n%s", s)
+	}
+	if strings.Contains(s, "completed_at:") {
+		t.Errorf("Expected completed_at to be cleared when cancelling, got:\n%s", s)
+	}
+}

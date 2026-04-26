@@ -122,11 +122,13 @@ Filtering reduces a task list based on field-value criteria.
 
 ### 2.1 Expression Format
 
-Each filter expression is a string in the form `field=value`:
+Each filter expression is a string in the form `field<op>value`, where `<op>` is one of `=`, `>=`, `>`, `<=`, `<`:
 
-- Split on the **first** `=` character.
+- Operators are checked in order: `>=`, `<=`, `>`, `<`, then `=`.
 - Leading and trailing whitespace on both field and value are trimmed.
-- An expression missing `=` is an error.
+- An expression missing any recognized operator is an error.
+
+**Comparison operators** (`>`, `>=`, `<`, `<=`) are only supported on ordinal fields (see §2.3.1). Using them on other fields is an error.
 
 ### 2.2 Combination
 
@@ -137,8 +139,8 @@ Multiple filter expressions combine with **AND** logic: a task must match every 
 | Field | Match Type | Details |
 |-------|-----------|---------|
 | `status` | Exact | `task.Status == value` |
-| `priority` | Exact | `task.Priority == value` |
-| `effort` | Exact | `task.Effort == value` |
+| `priority` | Exact or ordinal | `task.Priority == value`; supports `>`, `>=`, `<`, `<=` (see §2.3.1) |
+| `effort` | Exact or ordinal | `task.Effort == value`; supports `>`, `>=`, `<`, `<=` (see §2.3.1) |
 | `type` | Exact | `task.Type == value` |
 | `id` | Exact | `task.ID == value` |
 | `group` | Exact | `task.Group == value` |
@@ -149,6 +151,24 @@ Multiple filter expressions combine with **AND** logic: a task must match every 
 | `blocked` | Boolean | `blocked=true` matches tasks with `len(Dependencies) > 0`; `blocked=false` matches tasks with no dependencies |
 | `parent` | Bool/value | `parent=true` matches tasks with a parent set; `parent=false` matches tasks without; any other value is an exact match against `task.Parent` |
 
+### 2.3.1 Ordinal Comparison
+
+The `priority` and `effort` fields have a natural ordering and support the comparison operators `>`, `>=`, `<`, `<=`:
+
+| Field | Order (lowest → highest) |
+|-------|--------------------------|
+| `priority` | `low` → `medium` → `high` → `critical` |
+| `effort` | `small` → `medium` → `large` |
+
+Examples:
+- `priority>=medium` — matches medium, high, and critical.
+- `effort<large` — matches small and medium.
+- `priority>critical` — matches nothing (critical is the highest).
+
+Tasks with an unset (empty) value for the field never match a comparison filter.
+
+Using a comparison operator on a non-ordinal field (e.g., `status>=pending`) returns an error.
+
 ### 2.4 Unknown Fields
 
 A filter on an unrecognized field name always returns `false` (no tasks match). No error is raised.
@@ -158,7 +178,7 @@ A filter on an unrecognized field name always returns `false` (no tasks match). 
 - No negation operators (no `!=`, `!`, `not`).
 - No OR logic — all filters are AND.
 - No regex or glob patterns.
-- No range queries (no `>=`, `<=`).
+- Comparison operators (`>=`, `>`, `<=`, `<`) are limited to ordinal fields (`priority`, `effort`).
 
 ---
 

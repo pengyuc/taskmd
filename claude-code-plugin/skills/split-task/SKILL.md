@@ -49,6 +49,7 @@ The user's query is in `$ARGUMENTS` (a task ID like `077`, optionally followed b
       priority: <inherit from parent>
       effort: <estimated for this slice>
       tags: <inherit relevant tags from parent>
+      phase: <inherit from parent if set>
       parent: "<original task ID>"
       created: <today's date YYYY-MM-DD>
       ---

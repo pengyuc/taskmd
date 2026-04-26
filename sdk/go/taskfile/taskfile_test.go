@@ -635,6 +635,141 @@ created: 2026-02-08
 	}
 }
 
+func TestUpdateTaskFile_SetCompleted(t *testing.T) {
+	path := createTestFile(t, noTagsTask)
+
+	err := UpdateTaskFile(path, UpdateRequest{Completed: strPtr("2026-04-12")})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	content, _ := os.ReadFile(path)
+	s := string(content)
+	if !strings.Contains(s, "completed_at: 2026-04-12") {
+		t.Errorf("expected completed date to be inserted, got:\n%s", s)
+	}
+	if !strings.Contains(s, "status: pending") {
+		t.Error("expected other fields preserved")
+	}
+}
+
+func TestUpdateTaskFile_UpdateCompleted(t *testing.T) {
+	task := `---
+id: "010"
+title: "Completed task"
+status: completed
+completed_at: 2026-03-01
+created: 2026-02-08
+---
+
+# Completed task
+`
+	path := createTestFile(t, task)
+
+	err := UpdateTaskFile(path, UpdateRequest{Completed: strPtr("2026-04-12")})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	content, _ := os.ReadFile(path)
+	s := string(content)
+	if !strings.Contains(s, "completed_at: 2026-04-12") {
+		t.Errorf("expected completed date to be updated, got:\n%s", s)
+	}
+	if strings.Contains(s, "completed_at: 2026-03-01") {
+		t.Error("expected old completed date to be replaced")
+	}
+}
+
+func TestUpdateTaskFile_RemoveCompleted(t *testing.T) {
+	task := `---
+id: "010"
+title: "Completed task"
+status: completed
+completed_at: 2026-03-01
+created: 2026-02-08
+---
+
+# Completed task
+`
+	path := createTestFile(t, task)
+
+	err := UpdateTaskFile(path, UpdateRequest{RemoveFields: []string{"completed_at"}})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	content, _ := os.ReadFile(path)
+	s := string(content)
+	if strings.Contains(s, "completed_at:") {
+		t.Errorf("expected completed field to be removed, got:\n%s", s)
+	}
+	if !strings.Contains(s, "status: completed") {
+		t.Error("expected status preserved")
+	}
+	if !strings.Contains(s, "# Completed task") {
+		t.Error("expected body preserved")
+	}
+}
+
+func TestUpdateTaskFile_RemoveFieldNotPresent(t *testing.T) {
+	path := createTestFile(t, noTagsTask)
+
+	err := UpdateTaskFile(path, UpdateRequest{
+		Status:       strPtr("completed"),
+		RemoveFields: []string{"completed_at"},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	content, _ := os.ReadFile(path)
+	s := string(content)
+	if !strings.Contains(s, "status: completed") {
+		t.Error("expected status update to work even with non-existent remove field")
+	}
+}
+
+func TestUpdateTaskFile_SetCancelledAt(t *testing.T) {
+	path := createTestFile(t, noTagsTask)
+
+	err := UpdateTaskFile(path, UpdateRequest{CancelledAt: strPtr("2026-04-12")})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	content, _ := os.ReadFile(path)
+	s := string(content)
+	if !strings.Contains(s, "cancelled_at: 2026-04-12") {
+		t.Errorf("expected cancelled_at date to be inserted, got:\n%s", s)
+	}
+}
+
+func TestUpdateTaskFile_RemoveCancelledAt(t *testing.T) {
+	task := `---
+id: "010"
+title: "Cancelled task"
+status: cancelled
+cancelled_at: 2026-03-01
+created: 2026-02-08
+---
+
+# Cancelled task
+`
+	path := createTestFile(t, task)
+
+	err := UpdateTaskFile(path, UpdateRequest{RemoveFields: []string{"cancelled_at"}})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	content, _ := os.ReadFile(path)
+	s := string(content)
+	if strings.Contains(s, "cancelled_at:") {
+		t.Errorf("expected cancelled_at field to be removed, got:\n%s", s)
+	}
+}
+
 func TestFindFrontmatterBounds(t *testing.T) {
 	tests := []struct {
 		name      string

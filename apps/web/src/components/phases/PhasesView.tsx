@@ -14,6 +14,7 @@ function computeStats(tasks: Task[]) {
     total: tasks.length,
     completed: tasks.filter((t) => t.status === "completed").length,
     inProgress: tasks.filter((t) => t.status === "in-progress").length,
+    inReview: tasks.filter((t) => t.status === "in-review").length,
     pending: tasks.filter((t) => t.status === "pending" || t.status === "open" || t.status === "").length,
     blocked: tasks.filter((t) => t.status === "blocked").length,
   };

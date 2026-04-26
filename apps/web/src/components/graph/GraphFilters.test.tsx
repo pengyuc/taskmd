@@ -27,6 +27,7 @@ describe("GraphFilters", () => {
 
     expect(screen.getByText("pending")).toBeInTheDocument();
     expect(screen.getByText("in-progress")).toBeInTheDocument();
+    expect(screen.getByText("in-review")).toBeInTheDocument();
     expect(screen.getByText("completed")).toBeInTheDocument();
     expect(screen.getByText("blocked")).toBeInTheDocument();
     expect(screen.getByText("cancelled")).toBeInTheDocument();

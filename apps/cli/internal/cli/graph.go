@@ -23,6 +23,9 @@ var (
 	graphAll           bool
 	graphFilters       []string
 	graphScope         string
+	graphStatus        string
+	graphPriority      string
+	graphPhase         string
 )
 
 // graphCmd represents the graph command
@@ -50,6 +53,9 @@ Examples:
   taskmd graph --filter priority=high
   taskmd graph --filter priority=high --filter effort=small
   taskmd graph --filter tag=cli --exclude-status completed
+  taskmd graph --status pending
+  taskmd graph --priority high
+  taskmd graph --phase web-ui
   taskmd graph --scope cli
   taskmd graph --scope "web*" --format mermaid
 
@@ -71,6 +77,9 @@ func init() {
 	graphCmd.Flags().StringVarP(&graphOut, "out", "o", "", "write output to file instead of stdout")
 	graphCmd.Flags().StringArrayVar(&graphFilters, "filter", []string{}, "filter tasks (can specify multiple times for AND conditions, e.g., --filter priority=high --filter effort=small)")
 	graphCmd.Flags().StringVar(&graphScope, "scope", "", "filter by scope; supports wildcards (e.g. cli, cli*)")
+	graphCmd.Flags().StringVar(&graphStatus, "status", "", "shortcut for --filter status=<value>")
+	graphCmd.Flags().StringVar(&graphPriority, "priority", "", "shortcut for --filter priority=<value>")
+	graphCmd.Flags().StringVar(&graphPhase, "phase", "", "filter by phase")
 }
 
 //nolint:gocognit,gocyclo,funlen // TODO: refactor to reduce complexity
@@ -111,19 +120,21 @@ func runGraph(cmd *cobra.Command, args []string) error {
 
 	filtered := false
 
-	// Apply --filter flags
-	if len(graphFilters) > 0 {
-		tasks, err = applyFilters(tasks, graphFilters)
-		if err != nil {
-			return fmt.Errorf("filter error: %w", err)
-		}
-		filtered = true
+	// Apply shortcut and generic filters
+	shortcuts := FilterShortcuts{
+		Status:   graphStatus,
+		Priority: graphPriority,
+		Phase:    graphPhase,
+		Scope:    graphScope,
+		Filters:  graphFilters,
 	}
-
-	// Apply scope filter
-	if graphScope != "" {
-		warnUnknownScope(graphScope)
-		tasks = filterTasksByScope(tasks, graphScope)
+	hasShortcutFilters := shortcuts.Status != "" || shortcuts.Priority != "" ||
+		shortcuts.Phase != "" || shortcuts.Scope != "" || len(shortcuts.Filters) > 0
+	if hasShortcutFilters {
+		tasks, err = applyShortcutFilters(tasks, shortcuts)
+		if err != nil {
+			return err
+		}
 		filtered = true
 	}
 

@@ -5,6 +5,7 @@ import { TaskCard } from "./TaskCard.tsx";
 const statusColors: Record<string, string> = {
   pending: "border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20",
   "in-progress": "border-blue-300 bg-blue-50 dark:bg-blue-900/20",
+  "in-review": "border-purple-300 bg-purple-50 dark:bg-purple-900/20",
   completed: "border-green-300 bg-green-50 dark:bg-green-900/20",
   blocked: "border-red-300 bg-red-50 dark:bg-red-900/20",
 };

@@ -286,7 +286,7 @@ func buildTaskFileContent(id, title string) string {
 	tags := parseTags()
 	b.WriteString(taskfile.FormatInlineTags(tags) + "\n")
 
-	fmt.Fprintf(&b, "created: %s\n", time.Now().Format("2006-01-02"))
+	fmt.Fprintf(&b, "created_at: %s\n", time.Now().Format("2006-01-02"))
 	b.WriteString("---\n")
 
 	b.WriteString("\n")

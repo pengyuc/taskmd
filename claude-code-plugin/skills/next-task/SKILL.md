@@ -13,6 +13,7 @@ Find the next recommended task to work on using the `taskmd` CLI.
 1. Run `taskmd next` with any arguments the user provided via `$ARGUMENTS`
    - If `$ARGUMENTS` is empty, run: `taskmd next`
    - If `$ARGUMENTS` contains flags, pass them through: `taskmd next $ARGUMENTS`
-   - Common usage: `/taskmd:next-task --filter tag=mvp` to find the next MVP task
+   - Common flags: `--priority`, `--status`, `--phase`, `--scope`, `--filter`
+   - Examples: `--priority high`, `--phase core-cli`, `--filter tag=mvp`
 2. Read the recommended task file to get full details
 3. Present the task summary including: ID, title, status, priority, and description

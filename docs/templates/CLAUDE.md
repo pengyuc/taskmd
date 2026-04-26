@@ -17,7 +17,7 @@ dependencies:
   - "002"
 tags:
   - feature
-created: 2026-01-15
+created_at: 2026-01-15
 ---
 
 # Task Title
@@ -47,7 +47,7 @@ What this task accomplishes.
 | `effort` | No | `small`, `medium`, `large` |
 | `dependencies` | No | Array of task ID strings |
 | `tags` | No | Array of lowercase, hyphen-separated strings |
-| `created` | No | `YYYY-MM-DD` date |
+| `created_at` | No | `YYYY-MM-DD` date (alias: `created`) |
 
 ### File Naming
 

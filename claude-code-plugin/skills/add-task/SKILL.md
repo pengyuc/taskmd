@@ -15,7 +15,7 @@ The user's task description is in `$ARGUMENTS`.
 1. **Parse the user's input** from `$ARGUMENTS` to extract:
    - The task **title** (required)
    - An optional **template** name (e.g. "bug", "feature", "chore", or a custom template)
-   - Any optional flags: `--priority`, `--effort`, `--tags`, `--group`, `--depends-on`, `--parent`, `--owner`, `--slug`
+   - Any optional flags: `--priority`, `--effort`, `--tags`, `--group`, `--depends-on`, `--parent`, `--owner`, `--slug`, `--phase`
 
 2. **Choose the group** based on the task's domain (pass with `--group`):
    - `cli` — CLI commands, Go backend, terminal features
@@ -36,7 +36,23 @@ The user's task description is in `$ARGUMENTS`.
 
    # With a custom slug (overrides auto-generated slug from title)
    taskmd add "Fix the login bug" --slug fix-login --group cli
+
+   # With a phase (must match a phase id from .taskmd.yaml)
+   taskmd add "Add phase filtering" --phase core-cli --group cli
    ```
+
+   When the user mentions a phase, milestone, or sprint, check `.taskmd.yaml` for configured `phases` and use the matching phase `id` with `--phase`. If the phase doesn't exist yet, add it to `.taskmd.yaml` first:
+
+   ```yaml
+   # in .taskmd.yaml
+   phases:
+     - id: v2-launch
+       name: "V2 Launch"
+       description: "Features for the v2.0 release"
+       due: 2026-06-01    # optional
+   ```
+
+   Each phase needs an `id` (referenced by tasks), `name` (display label), and optionally `description` and `due` date.
 
    Available templates can be listed with `taskmd templates list`. Built-in templates include `bug`, `feature`, and `chore`. Projects may define custom templates in `.taskmd/templates/`.
 

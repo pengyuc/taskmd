@@ -18,6 +18,7 @@ The user's task description is in `$ARGUMENTS`.
 
 2. **Read configuration**:
    - Read `.taskmd.yaml` if it exists for: task `dir` (default: `tasks`), `id` config (strategy, prefix, padding, length), and `phases`
+   - If the user mentions a phase/milestone/sprint, check `.taskmd.yaml` for configured `phases` and use the matching `id`. If the phase doesn't exist yet, add it to the `phases` array in `.taskmd.yaml` (see `SPEC_REFERENCE.md` for the phases config format)
 
 3. **Determine the group** based on the task's domain:
    - If the user specified `--group`, use that
